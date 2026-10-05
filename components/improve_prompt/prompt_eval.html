@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111314">
+  <title>Improve_Prompt - 提示词评测</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1112;
+      --sidebar: #141617;
+      --surface: #181a1b;
+      --surface-strong: #1d2021;
+      --surface-hover: #222526;
+      --line: #2b2f30;
+      --line-strong: #3a3f40;
+      --text: #f4f5f4;
+      --text-soft: #b8bdbc;
+      --muted: #7e8583;
+      --accent: #d9ff66;
+      --accent-soft: rgba(217, 255, 102, 0.12);
+      --blue: #8ec8ff;
+      --danger: #ff7676;
+      --danger-soft: rgba(255, 118, 118, 0.12);
+      --success: #72dc9a;
+      --success-soft: rgba(114, 220, 154, 0.12);
+      --warning: #f6c96b;
+      --warning-soft: rgba(246, 201, 107, 0.1);
+      --radius: 8px;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+      --font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 320px;
+      background: var(--bg);
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 76% -14%, rgba(217, 255, 102, 0.055), transparent 32rem),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    svg {
+      display: block;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 282px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      width: 282px;
+      height: 100vh;
+      padding: 22px 16px 18px;
+      overflow-y: auto;
+      background: rgba(20, 22, 23, 0.97);
+      border-right: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 46px;
+      padding: 0 8px;
+      margin-bottom: 30px;
+    }
+
+    .brand__logo {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      overflow: hidden;
+      background: #0c0e0f;
+      border: 1px solid #424849;
+      border-radius: 8px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .brand__logo::before,
+    .brand__logo::after {
+      position: absolute;
+      width: 14px;
+      height: 20px;
+      content: "";
+      border: 1.5px solid var(--accent);
+      border-radius: 5px 5px 5px 1px;
+      transform: rotate(-22deg) translate(-3px, 1px);
+      opacity: 0.95;
+    }
+
+    .brand__logo::after {
+      width: 8px;
+      height: 13px;
+      border-color: rgba(244, 245, 244, 0.74);
+      transform: rotate(-22deg) translate(6px, -3px);
+    }
+
+    .brand__name {
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .nav-label {
+      padding: 0 10px;
+      margin-bottom: 9px;
+      color: #666d6b;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-tree {
+      display: grid;
+      gap: 4px;
+    }
+
+    .nav-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-height: 40px;
+      padding: 0 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-soft);
+      cursor: pointer;
+      text-align: left;
+      transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .nav-row:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .nav-row:focus-visible,
+    .button:focus-visible,
+    .icon-button:focus-visible,
+    .link-button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid rgba(217, 255, 102, 0.7);
+      outline-offset: 2px;
+    }
+
+    .nav-row--level1 {
+      color: #e8eae9;
+      font-weight: 650;
+    }
+
+    .nav-row--level1.is-active {
+      background: #202324;
+      border-color: #303536;
+    }
+
+    .nav-row--level2 {
+      min-height: 36px;
+      padding-left: 14px;
+      color: #9fa5a4;
+      font-size: 13px;
+    }
+
+    .nav-row--level3 {
+      min-height: 34px;
+      padding: 0 9px 0 34px;
+      color: #818886;
+      font-size: 13px;
+    }
+
+    .nav-row--level3::before {
+      width: 4px;
+      height: 4px;
+      margin-right: 10px;
+      background: currentColor;
+      border-radius: 50%;
+      content: "";
+      opacity: 0.7;
+    }
+
+    .nav-row--level3:hover,
+    .nav-row--level3.is-active {
+      color: var(--text);
+      background: var(--surface-hover);
+      border-color: #303536;
+    }
+
+    .nav-row--level3.is-active::before {
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .nav-row--link {
+      font-weight: 650;
+    }
+
+    .nav-row__icon {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      margin-right: 8px;
+      color: #8f9694;
+      background: #1c1f20;
+      border: 1px solid #2c3031;
+      border-radius: 7px;
+    }
+
+    .nav-row__icon svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .nav-row__text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nav-row__chevron {
+      width: 15px;
+      height: 15px;
+      margin-left: auto;
+      color: #6f7674;
+      transition: transform 180ms ease;
+    }
+
+    .nav-row[aria-expanded="false"] .nav-row__chevron {
+      transform: rotate(-90deg);
+    }
+
+    .nav-subtree__inner {
+      display: grid;
+      gap: 3px;
+      min-height: 0;
+      margin-top: 3px;
+      overflow: hidden;
+    }
+
+    .nav-subtree--level3 .nav-subtree__inner {
+      margin: 2px 0 5px 23px;
+      padding-left: 8px;
+      border-left: 1px solid #292d2e;
+    }
+
+    .sidebar__footer {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 42px;
+      padding: 0 10px;
+      margin-top: auto;
+      color: #737a78;
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(114, 220, 154, 0.09);
+    }
+
+    .main {
+      min-width: 0;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 70px;
+      padding: 14px clamp(18px, 3vw, 42px);
+      background: rgba(15, 17, 18, 0.86);
+      border-bottom: 1px solid rgba(43, 47, 48, 0.82);
+      backdrop-filter: blur(18px);
+    }
+
+    .icon-button.menu-toggle {
+      display: none;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      color: #727977;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .breadcrumbs strong {
+      overflow: hidden;
+      color: #b6bbba;
+      font-weight: 500;
+      text-overflow: ellipsis;
+    }
+
+    .topbar__spacer {
+      flex: 1;
+    }
+
+    .topbar__status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(114, 220, 154, 0.09);
+    }
+
+    .button,
+    .icon-button,
+    .link-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 0 14px;
+      background: #202324;
+      border: 1px solid #303536;
+      border-radius: 8px;
+      color: #d8dcda;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 620;
+      white-space: nowrap;
+      transition: transform 150ms ease, color 150ms ease, background 150ms ease,
+        border-color 150ms ease, opacity 150ms ease;
+    }
+
+    .button:hover:not(:disabled),
+    .icon-button:hover:not(:disabled),
+    .link-button:hover:not(:disabled) {
+      color: #fff;
+      background: #272b2c;
+      border-color: #414748;
+    }
+
+    .button:active:not(:disabled),
+    .icon-button:active:not(:disabled),
+    .link-button:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .button:disabled,
+    .link-button:disabled {
+      color: #656b69;
+      background: #191b1c;
+      border-color: #272a2b;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .button svg,
+    .icon-button svg,
+    .link-button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .button--primary {
+      color: #111310;
+      background: var(--accent);
+      border-color: var(--accent);
+      font-weight: 740;
+    }
+
+    .button--primary:hover:not(:disabled) {
+      color: #0a0c09;
+      background: #e2ff86;
+      border-color: #e2ff86;
+    }
+
+    .button--danger:not(:disabled) {
+      color: #ff9b9b;
+      background: var(--danger-soft);
+      border-color: rgba(255, 118, 118, 0.24);
+    }
+
+    .button--danger:hover:not(:disabled) {
+      color: #fff;
+      background: rgba(255, 118, 118, 0.2);
+      border-color: rgba(255, 118, 118, 0.42);
+    }
+
+    .icon-button {
+      width: 38px;
+      min-width: 38px;
+      padding: 0;
+    }
+
+    .link-button {
+      min-height: 30px;
+      padding: 0 9px;
+      color: #aeb4b2;
+      background: transparent;
+      border-color: transparent;
+      font-size: 12px;
+    }
+
+    .content {
+      width: min(100%, 1660px);
+      padding: 30px clamp(18px, 3vw, 42px) 48px;
+      margin: 0 auto;
+    }
+
+    .page-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .page-heading__eyebrow {
+      margin: 0 0 8px;
+      color: #737a78;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .page-heading h1 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 34px);
+      font-weight: 720;
+      letter-spacing: 0;
+    }
+
+    .page-heading__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 9px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      position: relative;
+      min-width: 0;
+      min-height: 110px;
+      padding: 16px;
+      overflow: hidden;
+      background: #181a1b;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .metric::after {
+      position: absolute;
+      right: -20px;
+      bottom: -38px;
+      width: 92px;
+      height: 92px;
+      background: rgba(217, 255, 102, 0.045);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .metric--success::after {
+      background: rgba(114, 220, 154, 0.06);
+    }
+
+    .metric--danger::after {
+      background: rgba(255, 118, 118, 0.055);
+    }
+
+    .metric--accent::after {
+      background: rgba(142, 200, 255, 0.055);
+    }
+
+    .metric__label {
+      position: relative;
+      z-index: 1;
+      display: block;
+      margin-bottom: 12px;
+      color: #858c8a;
+      font-size: 11px;
+    }
+
+    .metric__value {
+      position: relative;
+      z-index: 1;
+      display: block;
+      overflow: hidden;
+      color: #f2f4f3;
+      font-family: var(--mono);
+      font-size: 23px;
+      font-weight: 720;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric__sub {
+      position: relative;
+      z-index: 1;
+      display: block;
+      margin-top: 7px;
+      color: #686f6d;
+      font-size: 10px;
+    }
+
+    .metric--accuracy {
+      border-color: #71853e;
+      background: linear-gradient(135deg, rgba(217, 255, 102, 0.08), #181a1b 65%);
+    }
+
+    .metric--accuracy .metric__value {
+      color: var(--accent);
+      font-size: 30px;
+    }
+
+    .metric__corrections {
+      position: relative;
+      z-index: 1;
+      display: block;
+      margin-top: 10px;
+      color: #9ca49f;
+      font-size: 11px;
+    }
+
+    .metric__corrections strong {
+      margin-left: 5px;
+      color: #d7ddda;
+      font-family: var(--mono);
+    }
+
+    .eval-workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+      gap: 16px;
+    }
+
+    .side-stack {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .panel {
+      min-width: 0;
+      overflow: hidden;
+      background: rgba(24, 26, 27, 0.97);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 62px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header__title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .panel-header__icon {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 auto;
+      color: var(--accent);
+      background: #202324;
+      border: 1px solid #303536;
+      border-radius: 8px;
+    }
+
+    .panel-header__icon svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 680;
+    }
+
+    .panel-header__hint {
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .panel-body {
+      display: grid;
+      gap: 17px;
+      padding: 18px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .field__label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: #a3a9a7;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .field__role {
+      color: #747b79;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .input,
+    .select,
+    .textarea {
+      width: 100%;
+      background: #121415;
+      border: 1px solid #303536;
+      border-radius: 7px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+    }
+
+    .input,
+    .select {
+      height: 40px;
+      padding: 0 12px;
+    }
+
+    .select {
+      padding-right: 38px;
+      appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #8f9694 50%),
+        linear-gradient(135deg, #8f9694 50%, transparent 50%);
+      background-position:
+        calc(100% - 17px) 17px,
+        calc(100% - 12px) 17px;
+      background-repeat: no-repeat;
+      background-size: 5px 5px, 5px 5px;
+      cursor: pointer;
+    }
+
+    .select option {
+      color: var(--text);
+      background: #1b1e1f;
+    }
+
+    .textarea {
+      min-height: 112px;
+      padding: 11px 12px;
+      line-height: 1.55;
+      resize: vertical;
+      scrollbar-color: #444a49 #17191a;
+      scrollbar-width: thin;
+    }
+
+    .input::placeholder,
+    .textarea::placeholder {
+      color: #606765;
+    }
+
+    .input:hover,
+    .select:hover,
+    .textarea:hover {
+      border-color: #3e4445;
+    }
+
+    .input:focus,
+    .select:focus,
+    .textarea:focus {
+      background-color: #101213;
+      border-color: rgba(217, 255, 102, 0.62);
+      box-shadow: 0 0 0 3px rgba(217, 255, 102, 0.08);
+    }
+
+    .plan-summary {
+      display: grid;
+      gap: 10px;
+      padding: 13px;
+      background: #151718;
+      border: 1px solid #292d2e;
+      border-radius: 8px;
+    }
+
+    .plan-summary__row {
+      display: grid;
+      grid-template-columns: 68px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .plan-summary__label {
+      color: #707775;
+      font-size: 11px;
+    }
+
+    .plan-summary__value {
+      min-width: 0;
+      overflow: hidden;
+      color: #cfd3d2;
+      font-size: 12px;
+      line-height: 1.5;
+      text-overflow: ellipsis;
+    }
+
+    .plan-summary__value--prompt {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      white-space: pre-wrap;
+    }
+
+    .plan-summary__prompt-button {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: 68px minmax(0, 1fr);
+      gap: 10px;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .plan-summary__prompt-button:hover .plan-summary__value,
+    .plan-summary__prompt-button:focus-visible .plan-summary__value {
+      color: var(--accent);
+    }
+
+    .prompt-full-text {
+      margin: 0;
+      color: var(--text);
+      font: inherit;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .evaluation-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 9px;
+      margin: 0 0 12px;
+    }
+
+    .progress-card {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      background: #151718;
+      border: 1px solid #292d2e;
+      border-radius: 8px;
+    }
+
+    .progress-card__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: #aeb4b2;
+      font-size: 12px;
+    }
+
+    .progress-card__value {
+      color: #e8eae9;
+      font-family: var(--mono);
+      font-weight: 680;
+    }
+
+    .progress-track {
+      height: 7px;
+      overflow: hidden;
+      background: #292d2e;
+      border-radius: 999px;
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      background: var(--accent);
+      border-radius: inherit;
+      transition: width 180ms ease;
+    }
+
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 52px;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .table-toolbar__title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: #d9dddc;
+      font-size: 13px;
+      font-weight: 680;
+    }
+
+    .selected-count {
+      color: #757c7a;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .selected-count.has-selection {
+      color: var(--accent);
+    }
+
+    .table-toolbar__actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      scrollbar-color: #444a49 #17191a;
+      scrollbar-width: thin;
+    }
+
+    table {
+      width: 100%;
+      min-width: 900px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    col.col-check {
+      width: 46px;
+    }
+
+    col.col-index {
+      width: 54px;
+    }
+
+    col.col-question {
+      width: 24%;
+    }
+
+    col.col-expected {
+      width: 22%;
+    }
+
+    col.col-result {
+      width: 24%;
+    }
+
+    col.col-judgment {
+      width: 120px;
+    }
+
+    col.col-delete {
+      width: 76px;
+    }
+
+    col.col-actions {
+      width: 88px;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #272b2c;
+      color: #b8bdbc;
+      font-size: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      height: 42px;
+      color: #7f8684;
+      background: #161819;
+      font-size: 11px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      transition: background 150ms ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.018);
+    }
+
+    tbody tr.is-selected {
+      background: rgba(217, 255, 102, 0.035);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .table-check {
+      width: 15px;
+      height: 15px;
+      margin: 2px 0 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .cell-text {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      white-space: pre-wrap;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .cell-text--muted {
+      color: #747b79;
+    }
+
+    .judgment-toggle { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; cursor: pointer; font-size: 11px; }
+    .judgment-toggle input { appearance: none; width: 34px; height: 19px; border-radius: 20px; background: #a94b4b; position: relative; cursor: pointer; }
+    .judgment-toggle input:checked { background: #489568; }
+    .judgment-toggle input:disabled { opacity: .45; cursor: not-allowed; }
+    .judgment-toggle input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: white; transition: transform .15s; }
+    .judgment-toggle input:checked::after { transform: translateX(15px); }
+    .judgment-select {
+      width: 98px;
+      height: 32px;
+      padding: 0 8px;
+      color: #d8dcda;
+      background-color: #191b1c;
+      border: 1px solid #303536;
+      border-radius: 6px;
+      outline: none;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .judgment-select[data-value="正确"] {
+      color: var(--success);
+      border-color: rgba(114, 220, 154, 0.32);
+    }
+
+    .judgment-select[data-value="错误"] {
+      color: #ff9999;
+      border-color: rgba(255, 118, 118, 0.32);
+    }
+
+    .judgment-select[data-value="待判定"] {
+      color: var(--warning);
+      border-color: rgba(246, 201, 107, 0.28);
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .row-button {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      color: #919896;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .row-button:hover {
+      color: var(--text);
+      background: #25292a;
+      border-color: #303536;
+    }
+
+    .row-button--danger:hover {
+      color: #ff9999;
+      background: var(--danger-soft);
+      border-color: rgba(255, 118, 118, 0.24);
+    }
+
+    .row-button svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .empty-state {
+      padding: 58px 18px;
+      color: #8b9290;
+      text-align: center;
+    }
+
+    .empty-state__icon {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 14px;
+      color: #7e8583;
+      background: #1d2021;
+      border: 1px solid #303536;
+      border-radius: 8px;
+    }
+
+    .empty-state h3 {
+      margin: 0 0 7px;
+      color: #d2d6d5;
+      font-size: 15px;
+    }
+
+    .empty-state p {
+      margin: 0;
+      color: #707775;
+      font-size: 12px;
+    }
+
+    .table-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 58px;
+      padding: 10px 18px;
+      color: #737a78;
+      font-size: 11px;
+      border-top: 1px solid var(--line);
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .page-button {
+      display: grid;
+      place-items: center;
+      min-width: 30px;
+      height: 30px;
+      padding: 0 7px;
+      color: #8d9492;
+      background: #1c1f20;
+      border: 1px solid #2d3132;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .page-button:hover:not(:disabled),
+    .page-button.is-current {
+      color: var(--text);
+      background: #262a2b;
+      border-color: #3a3f40;
+    }
+
+    .page-button.is-current {
+      color: #111310;
+      background: var(--accent);
+      border-color: var(--accent);
+      font-weight: 720;
+    }
+
+    .page-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      background: rgba(3, 4, 5, 0.72);
+      backdrop-filter: blur(7px);
+    }
+
+    .modal {
+      width: min(560px, 100%);
+      max-height: calc(100vh - 44px);
+      overflow-y: auto;
+      background: #181a1b;
+      border: 1px solid #34393a;
+      border-radius: 8px;
+      box-shadow: 0 26px 80px rgba(0, 0, 0, 0.48);
+      animation: modal-in 180ms ease both;
+    }
+
+    .modal--small {
+      width: min(440px, 100%);
+    }
+
+    .modal__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal__header h2 {
+      margin: 0 0 5px;
+      font-size: 16px;
+    }
+
+    .modal__header p {
+      margin: 0;
+      color: #7e8583;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .modal__body {
+      display: grid;
+      gap: 16px;
+      padding: 18px;
+    }
+
+    .modal__footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 9px;
+      padding: 15px 18px 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .modal__error {
+      min-height: 16px;
+      margin-top: -5px;
+      color: #ff9999;
+      font-size: 11px;
+    }
+
+    .toast-region {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 130;
+      display: grid;
+      gap: 10px;
+      width: min(360px, calc(100vw - 44px));
+      pointer-events: none;
+    }
+
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 14px;
+      background: #202324;
+      border: 1px solid #3c4242;
+      border-radius: 8px;
+      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.38);
+      color: #dce0de;
+      font-size: 13px;
+      line-height: 1.45;
+      pointer-events: auto;
+      animation: toast-in 220ms ease both;
+    }
+
+    .toast::before {
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      margin-top: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      content: "";
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .toast.is-leaving {
+      animation: toast-out 180ms ease both;
+    }
+
+    .mobile-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 35;
+      display: none;
+      background: rgba(4, 5, 6, 0.62);
+      backdrop-filter: blur(3px);
+    }
+
+    @keyframes modal-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes toast-out {
+      to {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+    }
+
+    @media (max-width: 1260px) {
+      .metrics-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .eval-workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .side-stack {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 900px) {
+      .app-shell {
+        grid-template-columns: 244px minmax(0, 1fr);
+      }
+
+      .sidebar {
+        width: 244px;
+      }
+
+      .page-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .page-heading__actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app-shell {
+        display: block;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(282px, calc(100vw - 36px));
+        transform: translateX(-102%);
+        transition: transform 210ms ease;
+      }
+
+      .sidebar.is-open {
+        transform: translateX(0);
+      }
+
+      .mobile-overlay.is-visible {
+        display: block;
+      }
+
+      .icon-button.menu-toggle {
+        display: inline-flex;
+      }
+
+      .topbar {
+        min-height: 62px;
+        padding: 12px 14px;
+      }
+
+      .topbar__status {
+        display: none;
+      }
+
+      .content {
+        padding: 22px 14px 38px;
+      }
+
+      .page-heading__actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .page-heading__actions .button {
+        width: 100%;
+      }
+
+      .metrics-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .metric {
+        min-height: 98px;
+        padding: 14px;
+      }
+
+      .metric__value {
+        font-size: 20px;
+      }
+
+      .side-stack {
+        grid-template-columns: 1fr;
+      }
+
+      .table-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .table-toolbar__actions {
+        width: 100%;
+      }
+
+      .table-toolbar__actions .link-button {
+        flex: 1;
+      }
+
+      .table-footer {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 460px) {
+      .page-heading__actions,
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="主导航">
+      <div class="brand">
+        <span class="brand__logo" aria-hidden="true"></span>
+        <span class="brand__name">Improve_Prompt</span>
+      </div>
+
+      <div class="nav-label">菜单</div>
+      <nav class="nav-tree">
+        <button class="nav-row nav-row--level1" type="button" data-collapse="basicMenu" aria-expanded="true">
+          <span class="nav-row__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.5h16v13H4z"></path>
+              <path d="M8 9h8M8 13h5"></path>
+            </svg>
+          </span>
+          <span class="nav-row__text">基础信息</span>
+          <svg class="nav-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </button>
+
+        <div class="nav-subtree" id="basicMenu">
+          <div class="nav-subtree__inner">
+            <button class="nav-row nav-row--level2" type="button" data-collapse="serverMenu" aria-expanded="true">
+              <span class="nav-row__text">模型服务器</span>
+              <svg class="nav-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </button>
+            <div class="nav-subtree nav-subtree--level3" id="serverMenu">
+              <div class="nav-subtree__inner">
+                <a class="nav-row nav-row--level3" href="server_list.html">服务器列表</a>
+                <a class="nav-row nav-row--level3" href="server_add.html">添加服务器</a>
+              </div>
+            </div>
+
+            <button class="nav-row nav-row--level2" type="button" data-collapse="modelMenu" aria-expanded="true">
+              <span class="nav-row__text">模型</span>
+              <svg class="nav-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </button>
+            <div class="nav-subtree nav-subtree--level3" id="modelMenu">
+              <div class="nav-subtree__inner">
+                <a class="nav-row nav-row--level3" href="model_list.html">模型列表</a>
+                <a class="nav-row nav-row--level3" href="model_add.html">添加模型</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="nav-row nav-row--level2" type="button" data-collapse="promptMenu" aria-expanded="true"><span class="nav-row__text">提示词调试</span><svg class="nav-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nav-subtree nav-subtree--level3" id="promptMenu"><div class="nav-subtree__inner">
+          <a class="nav-row nav-row--level3 nav-row--link" href="prompt_dis.html">提示词调试页</a>
+          <a class="nav-row nav-row--level3 nav-row--link" href="prompt_list.html">提示词列表页</a>
+        </div></div>
+
+        <button class="nav-row nav-row--level2" type="button" data-collapse="evalMenu" aria-expanded="true"><span class="nav-row__text">提示词评测</span><svg class="nav-row__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nav-subtree nav-subtree--level3" id="evalMenu"><div class="nav-subtree__inner">
+          <a class="nav-row nav-row--level3 nav-row--link is-active" href="prompt_eval.html" aria-current="page">提示词评测页</a>
+          <a class="nav-row nav-row--level3 nav-row--link" href="eval_results.html">评测结果列表</a>
+        </div></div>
+
+        <a class="nav-row nav-row--level1 nav-row--link" href="db_schema.html">
+          <span class="nav-row__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
+              <path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"></path>
+            </svg>
+          </span>
+          <span class="nav-row__text">数据库表结构</span>
+        </a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>Prototype workspace</span>
+      </div>
+    </aside>
+
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-button menu-toggle" id="menuToggle" type="button" aria-label="打开菜单" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"></path>
+          </svg>
+        </button>
+        <div class="breadcrumbs" aria-label="面包屑">
+          <span>提示词评测</span>
+          <span>/</span>
+          <strong>批量质量验证</strong>
+        </div>
+        <div class="topbar__spacer"></div>
+        <div class="topbar__status">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>本地原型环境</span>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="page-heading">
+          <div>
+            <p class="page-heading__eyebrow">提示词评测 / 数据验证</p>
+            <h1>提示词评测</h1>
+          </div>
+        </div>
+
+        <section class="metrics-grid" aria-label="评测指标">
+          <article class="metric">
+            <span class="metric__label">评测总数</span>
+            <strong class="metric__value" id="metricTotal">0</strong>
+            <span class="metric__sub">已有判定结果的数据</span>
+          </article>
+          <article class="metric metric--success">
+            <span class="metric__label">正确数量</span>
+            <strong class="metric__value" id="metricCorrect">0</strong>
+            <span class="metric__sub">人工确认后的结果</span>
+          </article>
+          <article class="metric metric--success metric--accuracy">
+            <span class="metric__label">准确率</span>
+            <strong class="metric__value" id="metricAccuracy">0%</strong>
+            <span class="metric__sub">正确 / 有结果的数据</span>
+            <span class="metric__corrections">人工纠正数 <strong id="metricCorrections">0</strong></span>
+          </article>
+        </section>
+
+        <div class="eval-workspace">
+          <div class="side-stack">
+            <section class="panel" aria-labelledby="planTitle">
+              <div class="panel-header">
+                <div class="panel-header__title">
+                  <span class="panel-header__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 5h16v12H8l-4 3z"></path>
+                      <path d="M8 9h8M8 13h5"></path>
+                    </svg>
+                  </span>
+                  <h2 id="planTitle">评测方案</h2>
+                </div>
+              </div>
+              <div class="panel-body">
+                <label class="field">
+                  <span class="field__label">
+                    <span>已保存方案</span>
+                    <span class="field__role" id="planCountLabel">0 个</span>
+                  </span>
+                  <select class="select" id="evaluationPlanSelect" aria-label="选择评测方案"></select>
+                </label>
+
+                <div class="plan-summary" id="planSummary">
+                  <div class="plan-summary__row">
+                    <span class="plan-summary__label">服务器</span>
+                    <span class="plan-summary__value" id="summaryServer">-</span>
+                  </div>
+                  <div class="plan-summary__row">
+                    <span class="plan-summary__label">模型</span>
+                    <span class="plan-summary__value" id="summaryModel">-</span>
+                  </div>
+                  <div class="plan-summary__row">
+                    <button class="plan-summary__prompt-button" id="showSystemPromptButton" type="button" aria-haspopup="dialog">
+                      <span class="plan-summary__label">系统提示词</span>
+                      <span class="plan-summary__value plan-summary__value--prompt" id="summaryPrompt">-</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel" aria-labelledby="progressTitle">
+              <div class="panel-header">
+                <div class="panel-header__title">
+                  <span class="panel-header__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 19V5M4 19h16"></path>
+                      <path d="m7 15 3-3 3 2 5-6"></path>
+                    </svg>
+                  </span>
+                  <h2 id="progressTitle">评测进度</h2>
+                </div>
+                <span class="panel-header__hint" id="evaluationStatus">待评测</span>
+              </div>
+              <div class="panel-body">
+                <div class="progress-card">
+                  <div class="progress-card__top">
+                    <span id="progressLabel">准备开始</span>
+                    <span class="progress-card__value" id="progressValue">0 / 0</span>
+                  </div>
+                  <div class="progress-track" role="progressbar" aria-label="评测进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressTrack">
+                    <div class="progress-bar" id="progressBar"></div>
+                  </div>
+                  <span class="metric__sub" id="progressHint">选择方案并准备测试数据</span>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div>
+          <div class="evaluation-actions" aria-label="评测操作">
+            <a class="button" id="editPlanLink" href="prompt_dis.html">提示词修改</a>
+            <button class="button" id="importExcelButton" type="button">导入 Excel</button>
+            <button class="button" id="manualEntryButton" type="button">手动录入</button>
+            <button class="button button--primary" id="startEvaluationButton" type="button"><span>开始评测</span></button>
+            <button class="button" id="saveEvaluationButton" type="button">保存</button>
+          </div>
+          <section class="panel" aria-labelledby="dataTitle">
+            <div class="panel-header">
+              <div class="panel-header__title">
+                <span class="panel-header__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2Z"></path>
+                    <path d="M4 6v6c0 1.1 3.6 2 8 2s8-.9 8-2V6"></path>
+                    <path d="M4 12v6c0 1.1 3.6 2 8 2s8-.9 8-2v-6"></path>
+                  </svg>
+                </span>
+                <h2 id="dataTitle">测试数据与结果</h2>
+              </div>
+
+            </div>
+
+            <div class="table-toolbar">
+              <div class="table-toolbar__title">
+                <span>评测数据</span>
+                <span class="selected-count" id="selectedCount">未选择</span>
+              </div>
+              <div class="table-toolbar__actions">
+                <button class="link-button" id="exportResultsButton" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3v12"></path>
+                    <path d="m7 10 5 5 5-5"></path>
+                    <path d="M5 20h14"></path>
+                  </svg>
+                  <span>导出结果</span>
+                </button>
+                <button class="link-button" id="deleteSelectedButton" type="button" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"></path>
+                  </svg>
+                  <span>批量删除</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="table-scroll" id="dataTableScroll">
+              <table>
+                <caption class="sr-only">提示词评测数据与结果</caption>
+                <colgroup>
+                  <col class="col-check">
+                  <col class="col-index">
+                  <col class="col-question">
+                  <col class="col-expected">
+                  <col class="col-result">
+                  <col class="col-judgment">
+                  <col class="col-delete">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>
+                      <label class="checkbox-wrap" title="全选">
+                        <span class="sr-only">全选当前数据</span>
+                        <input class="table-check" id="selectAllData" type="checkbox">
+                      </label>
+                    </th>
+                    <th>#</th>
+                    <th>问题</th>
+                    <th>标准答案</th>
+                    <th>模型结果</th>
+                    <th>判定结果</th>
+                    <th>删除</th>
+                  </tr>
+                </thead>
+                <tbody id="evaluationTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="empty-state" id="evaluationEmptyState" hidden>
+              <span class="empty-state__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2Z"></path>
+                  <path d="M4 6v6c0 1.1 3.6 2 8 2s8-.9 8-2V6"></path>
+                </svg>
+              </span>
+              <h3>还没有测试数据</h3>
+              <p>导入 Excel 或手动录入问题与标准答案。</p>
+            </div>
+
+            <div class="table-footer">
+              <span id="tableFooterCount">显示 0 条记录</span>
+              <div class="pagination" id="dataPagination" aria-label="分页"></div>
+            </div>
+          </section>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="systemPromptModal" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="systemPromptModalTitle"><div class="modal__header"><h2 id="systemPromptModalTitle">系统提示词</h2><button class="icon-button" type="button" data-close-modal="systemPromptModal" aria-label="关闭">×</button></div><div class="modal__body"><p class="prompt-full-text" id="systemPromptFullText"></p></div><div class="modal__footer"><button class="button button--primary" type="button" data-close-modal="systemPromptModal">关闭</button></div></section></div>
+
+  <div class="modal-backdrop" id="importModal" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle"><div class="modal__header"><div><h2 id="importModalTitle">导入 Excel</h2><p>选择包含“问题”和“标准答案”两列的工作表。</p></div><button class="icon-button" type="button" data-close-modal="importModal" aria-label="关闭">×</button></div><form id="importForm"><div class="modal__body"><label class="field"><span class="field__label">选择文件 *</span><input class="input" id="excelFileInput" type="file" accept=".xlsx,.csv" required></label><span class="modal__error" id="importError"></span></div><div class="modal__footer"><button class="button" type="button" data-close-modal="importModal">取消</button><button class="button button--primary" type="submit">确认导入</button></div></form></section></div>
+
+  <div class="modal-backdrop" id="entryModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="entryModalTitle">
+      <div class="modal__header">
+        <div>
+          <h2 id="entryModalTitle">手动录入测试数据</h2>
+          <p>录入一条问题和对应的标准答案。</p>
+        </div>
+        <button class="icon-button" type="button" data-close-modal="entryModal" aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18"></path>
+          </svg>
+        </button>
+      </div>
+      <form id="entryForm" novalidate>
+        <div class="modal__body">
+          <label class="field">
+            <span class="field__label">
+              <span>问题 <span class="field__required">*</span></span>
+              <span class="field__role">question</span>
+            </span>
+            <textarea class="textarea" id="entryQuestionInput" rows="4" placeholder="输入测试问题"></textarea>
+            <span class="modal__error" id="entryQuestionError"></span>
+          </label>
+          <label class="field">
+            <span class="field__label">
+              <span>标准答案 <span class="field__required">*</span></span>
+              <span class="field__role">ground_truth</span>
+            </span>
+            <textarea class="textarea" id="entryAnswerInput" rows="4" placeholder="输入标准答案"></textarea>
+            <span class="modal__error" id="entryAnswerError"></span>
+          </label>
+        </div>
+        <div class="modal__footer">
+          <button class="button" type="button" data-close-modal="entryModal">取消</button>
+          <button class="button button--primary" type="submit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M5 4h12l2 2v14H5z"></path>
+              <path d="M8 4v6h8V4M8 20v-6h8v6"></path>
+            </svg>
+            <span>保存数据</span>
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="deleteModal" hidden>
+    <section class="modal modal--small" role="alertdialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <div class="modal__header">
+        <div>
+          <h2 id="deleteModalTitle">删除测试数据</h2>
+          <p id="deleteModalCopy">删除后将无法恢复。</p>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="button" type="button" data-close-modal="deleteModal">取消</button>
+        <button class="button button--danger" id="confirmDeleteButton" type="button">确认删除</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+  <script src="bridge.js"></script>
+</body>
+</html>
